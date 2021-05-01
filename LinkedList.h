@@ -117,6 +117,40 @@ char* getValueAtKey(LinkedList* ll, char* key){
     return NULL;
 }
 
+// You have to free the returned char* from this call.
+char* deleteKey(LinkedList* ll, char* key){
+    if(ll == NULL){
+        if(DEBUG) fprintf(stderr, "%s", "Destroy LL Failed: LL Not Initialized");
+        return NULL;
+    }
+    pthread_mutex_lock(&ll->llLock);
+    Node* prev = NULL;
+    Node* ptr = ll->head;
+    while(ptr != NULL){
+        if( strcmp(ptr->key, key) == 0){
+            if(prev == NULL){
+                ll->head = ll->head->next;
+                free(ptr->key);
+                char* temp = ptr->value;
+                free(ptr);
+                pthread_mutex_unlock(&ll->llLock);
+                return temp;
+            }else{
+                prev->next = ptr->next;
+                free(ptr->key);
+                char* temp = ptr->value;
+                free(ptr);
+                pthread_mutex_unlock(&ll->llLock);
+                return temp;
+            }
+        }
+        prev = ptr;
+        ptr = ptr->next;
+    }
+    pthread_mutex_unlock(&ll->llLock);
+    return NULL;
+}
+
 bool destroyLL(LinkedList* ll){
     if(ll == NULL){
         if(DEBUG) fprintf(stderr, "%s", "Destroy LL Failed: LL Not Initialized");
