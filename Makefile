@@ -4,7 +4,7 @@ LFLAGS = -pthread
 
 all: $(OUTPUT)
 
-pa3: pa3.c pa3.h
+pa3: pa3.c pa3.h LinkedList.h
 	gcc $(CFLAGS) -o $@ $< $(LFLAGS)
 
 clean:
