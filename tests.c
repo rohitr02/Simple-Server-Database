@@ -307,6 +307,8 @@ void *echo(void *arg) {
                     value = getValueAtKey(keys, key);
                     if(value == NULL) printf("KNF\n");
                     else printf("OKG\n%ld\n%s\n", strlen(value)+1, value);
+                    free(key);
+                    key = NULL;
                     GET = 0;
                 }
             }
@@ -314,7 +316,6 @@ void *echo(void *arg) {
                 read(c->fd, &currChar, 1);
                 int bytesRead = 0;
                 while(currChar != '\n') {
-                    //printf("%c", currChar);
                     if(bytesRead == BUFSIZE) {
                         buf = realloc(buf, sizeof(char) * BUFSIZE * 2);
                         if(buf == NULL) {
