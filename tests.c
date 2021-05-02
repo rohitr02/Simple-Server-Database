@@ -13,6 +13,7 @@
 #define BACKLOG 5
 
 int running = 1;
+LinkedList* keys;
 
 // the argument we will pass to the connection-handler threads
 struct connection {
@@ -31,7 +32,9 @@ int main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	}
 
+    keys = initLL();
     (void) server(argv[1]);
+    destroyLL(keys);
     return EXIT_SUCCESS;
 }
 
@@ -176,8 +179,12 @@ int server(char *port)
 
 
 void *echo(void *arg) {
+    char* value = NULL;
+    char* key = NULL;
+   // char* load = NULL;
     int BUFSIZE = 8;
     char* buf = malloc(sizeof(char) * BUFSIZE);
+    char currChar; 
     char host[100], port[10];
     struct connection *c = (struct connection *) arg;
     int error, nread;
@@ -201,14 +208,42 @@ void *echo(void *arg) {
     int GET = 0;
     int SET = 0;
     int DEL = 0;
-    int getLoad = 0;
+    long int getLoad = 0;
     int getKey = 0;
-    LinkedList* keys = initLL();
-    while ((nread = read(c->fd, buf, BUFSIZE)) > 0) {
-        buf[nread] = '\0';
+    // DELETE THIS FOR SQAURE ONE
+    while ((nread = read(c->fd, &currChar, 1)) > 0) {
+        //if (DEBUG) printf("GET: %d\tSET: %d: DEL: %d\tInput: %s", GET, SET, DEL, buf);
+        int bytesRead = 0;
+        while(currChar != '\n') {
+            if(bytesRead == BUFSIZE) {
+                buf = realloc(buf, sizeof(char) * BUFSIZE * 2);
+                if(buf == NULL) {
+                    printf("SRV\n");
+                    abort();
+                }
+                BUFSIZE *= 2;
+            }
+            buf[bytesRead++] = currChar;
+            nread = read(c->fd, &currChar, 1);
+        }
+
+        if((bytesRead+2) >= BUFSIZE) {
+            buf = realloc(buf, sizeof(char) * BUFSIZE * 2);
+            if(buf == NULL) {
+                printf("SRV\n");
+                abort();
+            }
+            BUFSIZE *= 2;
+            buf[bytesRead++] = '\n';
+            buf[bytesRead] = '\0';
+        }
+        else {
+            buf[bytesRead++] = '\n';
+            buf[bytesRead] = '\0';
+        }
 
         if(getRequest == 0) {
-            if(nread != 4) {
+            if(bytesRead != 4) {
                 printf("BAD\n");
                 break;
             }
@@ -218,17 +253,17 @@ void *echo(void *arg) {
             if(strncmp(buf, key1,3) == 0) {
                 GET = 1;
                 getRequest = 1;
-                if(DEBUG) printf("Request: %s", buf);
+                if(DEBUG) printf("Input size (in bytes): %ld\tRequest made: %s", strlen(buf),buf);
             }
             else if(strncmp(buf, key2,3) == 0) {
                 SET = 1;
                 getRequest = 1;
-                if(DEBUG) printf("Request: %s", buf);
+                if(DEBUG) printf("Input size (in bytes): %ld\tRequest made: %s", strlen(buf),buf);
             }
             else if(strncmp(buf, key3,3) == 0) {
                 DEL = 1;
                 getRequest = 1;
-                if(DEBUG) printf("Request: %s", buf);
+                if(DEBUG) printf("Input size (in bytes): %ld\tRequest made: %s", strlen(buf),buf);
             }
             else {
                 printf("BAD\n");
@@ -236,75 +271,115 @@ void *echo(void *arg) {
             }
         }
         else if(getLoad == 0) {
-            if(DEBUG) printf("Load: %s", buf);
-            if(atoi(buf) <= 0) {
+            for(int i = 0; i < bytesRead-1; i++) {
+                if(!isdigit(buf[i])) {
+                    printf("BAD\n");
+                    getRequest = 0;
+                    getLoad = -1;
+                    break;
+                }
+            }
+            if(getLoad == -1) {
+                getLoad = 0;
+                break;
+            }
+            if(DEBUG) printf("Input size (in bytes): %ld\tLoad: %ld\n", strlen(buf), atol(buf));
+            if(atol(buf) <= 0) {
                 getRequest = 0;
                 printf("BAD\n");
                 break;
             }
-            else getLoad = atoi(buf);
+            else getLoad = atol(buf);
         }
         else if(getKey == 0) {
-            char* key = calloc(nread, sizeof(char));
-            memcpy(key, buf, nread-1);
-            printf("\n%s\n", key);
+            key = calloc(bytesRead, sizeof(char));
+            memcpy(key, buf, bytesRead-1);
             fflush(stdout);
-            if (DEBUG) printf("Key: %s\tBytes: %d\n", key,nread);
+            if (DEBUG) printf("Input size (in bytes): %ld\tKey: %s\n", strlen(buf), key);
             if(GET == 1) {
-                if(getLoad != nread) {
+                if(getLoad != bytesRead) {
                     getRequest = 0;
                     getLoad = 0;
                     printf("LEN\n"); 
-                    free(key);
                     break;
                 }
                 else {
-                    char* value = getValueAtKey(keys, key);
+                    value = getValueAtKey(keys, key);
                     if(value == NULL) printf("KNF\n");
                     else printf("OKG\n%ld\n%s\n", strlen(value)+1, value);
                     GET = 0;
                 }
             }
             if(SET == 1) {
-                nread = read(c->fd, buf, BUFSIZE);
-                char* value = calloc(nread , sizeof(char));
-                memcpy(value, buf, nread-1);
+                read(c->fd, &currChar, 1);
+                int bytesRead = 0;
+                while(currChar != '\n') {
+                    //printf("%c", currChar);
+                    if(bytesRead == BUFSIZE) {
+                        buf = realloc(buf, sizeof(char) * BUFSIZE * 2);
+                        if(buf == NULL) {
+                            printf("SRV\n");
+                            abort();
+                        }
+                        BUFSIZE *= 2;
+                    }
+                    buf[bytesRead++] = currChar;
+                    nread = read(c->fd, &currChar, 1);
+                }
+                if((bytesRead+2) >= BUFSIZE) {
+                    buf = realloc(buf, sizeof(char) * BUFSIZE * 2);
+                    if(buf == NULL) {
+                        printf("SRV\n");
+                        abort();
+                    }
+                    BUFSIZE *= 2;
+                    buf[bytesRead++] = '\n';
+                    buf[bytesRead] = '\0';
+                }
+                else {
+                    buf[bytesRead++] = '\n';
+                    buf[bytesRead] = '\0';
+                }
+
+                
+                value = calloc(bytesRead , sizeof(char));
+                memcpy(value, buf, bytesRead-1);
+                if(DEBUG) printf("Input size (in bytes): %ld\tValue: %s\n", strlen(buf), value);
                 int keyBytes = strlen(key) + 1;
-                if((nread + keyBytes) != getLoad) {
+                if((bytesRead + keyBytes) != getLoad) {
                     getRequest = 0;
                     getLoad = 0;
                     printf("LEN\n"); 
-                    free(key);
-                    free(value);
                     break;
                 }
                 else {
-
                     char* temp = getValueAtKey(keys, key);
-                    if(DEBUG) printf("Value: %s\n", value);
                     if(temp == NULL) addNode(keys, key, value);
                     else changeNodeValue(keys, key, value);
+                    
                     printf("OKS\n");
                     SET = 0;
                 }
             }
             if(DEL == 1) {
-                if(getLoad != nread) {
+                if(getLoad != bytesRead) {
                     getRequest = 0;
                     getLoad = 0;
                     printf("LEN\n"); 
-                    free(key);
                     break;
                 }
                 else {
                     if (DEBUG) printf("Delete key\n");
 
-                    char* value = getValueAtKey(keys, key);
+                    value = getValueAtKey(keys, key);
                     if(value == NULL) printf("KNF\n");
                     else {
                         value = deleteKey(keys, key);
                         printf("OKD\n%ld\n%s\n", strlen(value)+1, value);
+                        free(key);
                         free(value);
+                        value = NULL;
+                        key = NULL;
                     }
                     DEL = 0;
                 }
@@ -319,8 +394,11 @@ void *echo(void *arg) {
     }
 
     printf("[%s:%s] disconnected\n", host, port);
+    if(key != NULL)
+        free(key);
+    if(value != NULL)
+        free(value);
     free(buf);
-    destroyLL(keys);
     close(c->fd);
     free(c);
     return NULL;
