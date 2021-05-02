@@ -166,6 +166,7 @@ int server(char *port)
     }
 
 	puts("No longer listening.");
+    free(con);
 	pthread_detach(pthread_self());
 	pthread_exit(NULL);
 
@@ -244,14 +245,17 @@ void *echo(void *arg) {
             else getLoad = atoi(buf);
         }
         else if(getKey == 0) {
-            char* key = malloc(sizeof(char) * nread-1);
+            char* key = calloc(nread, sizeof(char));
             memcpy(key, buf, nread-1);
+            printf("\n%s\n", key);
+            fflush(stdout);
             if (DEBUG) printf("Key: %s\tBytes: %d\n", key,nread);
             if(GET == 1) {
                 if(getLoad != nread) {
                     getRequest = 0;
                     getLoad = 0;
                     printf("LEN\n"); 
+                    free(key);
                     break;
                 }
                 else {
@@ -263,13 +267,15 @@ void *echo(void *arg) {
             }
             if(SET == 1) {
                 nread = read(c->fd, buf, BUFSIZE);
-                char* value = malloc(sizeof(char) * nread);
+                char* value = calloc(nread , sizeof(char));
                 memcpy(value, buf, nread-1);
                 int keyBytes = strlen(key) + 1;
                 if((nread + keyBytes) != getLoad) {
                     getRequest = 0;
                     getLoad = 0;
                     printf("LEN\n"); 
+                    free(key);
+                    free(value);
                     break;
                 }
                 else {
@@ -287,6 +293,7 @@ void *echo(void *arg) {
                     getRequest = 0;
                     getLoad = 0;
                     printf("LEN\n"); 
+                    free(key);
                     break;
                 }
                 else {
