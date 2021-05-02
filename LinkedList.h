@@ -18,7 +18,7 @@ LinkedList* initLL(){
         exit(EXIT_FAILURE);
     }
     ll->head = NULL;
-    pthread_mutex_init(&ll->llLock, NULL);
+    //pthread_mutex_init(&ll->llLock, NULL);
     return ll;
 }
 
@@ -38,17 +38,17 @@ bool addNode(LinkedList* ll, char* key, char* value){
     temp->value = value;
     temp->next = NULL;
 
-    pthread_mutex_lock(&ll->llLock);
+    //pthread_mutex_lock(&ll->llLock);
     if(ll->head == NULL){
-        printf("Emptry Head Not Anymore: %s\n", key);
+        //printf("Emptry Head Not Anymore: %s\n", key);
         ll->head = temp;
     }else{
-        printf("Head Full : ");
+       // printf("Head Full : ");
         Node* prev = NULL;
         Node* ptr = ll->head;
         printf("%s\n", ptr->key);
         while(ptr != NULL){
-            if(strcmp(key, ptr->key) <= 0){
+            /*if(strcmp(key, ptr->key) <= 0){
                 if( prev == NULL ){
                     ll->head = temp;
                     temp->next = ptr;
@@ -59,7 +59,7 @@ bool addNode(LinkedList* ll, char* key, char* value){
 
                 pthread_mutex_unlock(&ll->llLock);
                 return true;
-            }
+            }*/
             prev = ptr;
             ptr = ptr->next;
         }
@@ -123,7 +123,7 @@ char* deleteKey(LinkedList* ll, char* key){
         if(DEBUG) fprintf(stderr, "%s", "Destroy LL Failed: LL Not Initialized");
         return NULL;
     }
-    pthread_mutex_lock(&ll->llLock);
+   pthread_mutex_lock(&ll->llLock);
     Node* prev = NULL;
     Node* ptr = ll->head;
     while(ptr != NULL){
@@ -147,7 +147,7 @@ char* deleteKey(LinkedList* ll, char* key){
         prev = ptr;
         ptr = ptr->next;
     }
-    pthread_mutex_unlock(&ll->llLock);
+   pthread_mutex_unlock(&ll->llLock);
     return NULL;
 }
 
@@ -178,9 +178,10 @@ void printLL(LinkedList* ll){
     }
     pthread_mutex_lock(&ll->llLock);
     Node* ptr = ll->head;
-    printf("Printing LL: \n");
+    printf("LL:\t");
     while(ptr != NULL){
-        printf("\t ( key: %s, value: %s )\n", ptr->key, ptr->value );
+        if(ptr->next == NULL) printf("(key: %s, value: %s)", ptr->key, ptr->value);
+        else printf("(key: %s, value: %s) ---> ", ptr->key, ptr->value);
         ptr = ptr->next;
     }
     pthread_mutex_unlock(&ll->llLock);

@@ -204,25 +204,7 @@ void *echo(void *arg) {
     int getKey = 0;
     LinkedList* keys = initLL();
     while ((nread = read(c->fd, buf, BUFSIZE)) > 0) {
-        if(DEBUG) printf("Bytes read: %d\tInput: %s\n", nread,buf);
-        int bytesTotal = 0;
-        while(nread == BUFSIZE) {
-            bytesTotal += nread;
-            buf = realloc(buf, BUFSIZE*2);
-            if(buf == NULL) {
-                printf("SRV\n");
-                destroyLL(keys);
-                abort();
-            }
-            BUFSIZE *= 2;
-            nread = read(c->fd, buf, BUFSIZE);
-        } 
-
-        if(bytesTotal == 0) buf[nread] = '\0';
-        else {
-            bytesTotal += nread;
-            buf[bytesTotal] = '\0';
-        }
+        buf[nread] = '\0';
 
         if(getRequest == 0) {
             if(nread != 4) {
@@ -281,7 +263,7 @@ void *echo(void *arg) {
             }
             if(SET == 1) {
                 nread = read(c->fd, buf, BUFSIZE);
-                char* value = malloc(sizeof(char) * nread-1);
+                char* value = malloc(sizeof(char) * nread);
                 memcpy(value, buf, nread-1);
                 int keyBytes = strlen(key) + 1;
                 if((nread + keyBytes) != getLoad) {
@@ -322,8 +304,10 @@ void *echo(void *arg) {
             }
             getRequest = 0;
             getLoad = 0;
-            printLL(keys);
-            putchar('\n');
+            if(DEBUG) {
+                printLL(keys);
+                putchar('\n');
+            }
         }
     }
 
