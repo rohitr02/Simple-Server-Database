@@ -370,10 +370,12 @@ void *echo(void *arg) {
                     break;
                 }
                 else {
-                    if (DEBUG) printf("Delete key\n");
-
                     value = getValueAtKey(keys, key);
-                    if(value == NULL) printf("KNF\n");
+                    if(value == NULL) {
+                        free(key);
+                        key = NULL;
+                        printf("KNF\n");
+                    }
                     else {
                         value = deleteKey(keys, key);
                         printf("OKD\n%ld\n%s\n", strlen(value)+1, value);
