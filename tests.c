@@ -391,8 +391,6 @@ void *echo(void *arg) {
                     break;
                 }
                 else {
-                    if (DEBUG) printf("Delete key\n");
-
                     value = getValueAtKey(keys, key);
                     if(value == NULL) write(c->fd, "KNF\n", 4); //printf("KNF\n");
                     else {
