@@ -1,63 +1,54 @@
 # CS214-Project3
-Pauli Peralta (pp589) and Rohit Rao (rpr79)
+## Pauli Peralta (pp589) and Rohit Rao (rpr79)
 
-Brief description:
-This program has a few functions that we needed to test in order to ensure that they were working correctly. Overall we needed to make sure that the program
-was correctly reading the bytes given by the client, parsing the bytes received, and ensure that the bytes were formatted correctly. After that, we needed tomake sure that the client received the proper response and that it could handle multiple clients at once. 
+### Brief Description:
+This program has a few major component that we needed to test in order to ensure that it was working correctly. The three major components were: reading and writing data from and to the client, parsing and responding appropriately to data sent from a client, and being able to handle multiple clients using multiple threads and making sure multithreading was functional.
 
-Data structure:
-We used a linked list to keep track of every (key,value) pair. A linked list provided us with easy access to data and we found that it provided an
-intuitive solution to the functionality required by the program.
+### Usage
+To run this program, provide it with a port number between 5000 and 65,536 as an arguement. To communicate with the server, the user can send "GET" / "SET" / "POST" instructions, followed by a positive integer representing the total byte size of the key and/or value to be stored/retrieved/deleted, and then the actual key and/or value to be stored/retrieved/deleted. Each of the arguements ** must be ** separated by a single newline character. Look at the following example for reference:
+	SET			<== First Instruction must be "SET", "GET", or "DEL
+	11			<== Second Instruction must be the total number of bytes of the key and/or value (** Including spaces and newlines **)
+	Day			<== Third Instruction must be the key to be stored/retrieved/deleted
+	Sunday		<== Fourth Instruction must be the associated value to be stored. ** This should only be sent when the first instruction is "SET"
 
-Parsing and handling client input:
-The approach we took to read the input from the client was a byte-by-byte approach. We parsed each input and essetianlly tokenized them and made sure
-that each input was formatted correctly, which in this case means that it must have ended with a newline byte. We tested this by giving it illegal 
-inputs that were formatted incorrectly and made sure that our program caught them.
-	
-The first set of instruction was easy to check because every possible legal input consisted of a total of 4 bytes, so anything that was not 4 bytes
-had to be incorrect. If 4 bytes were given as input then we just compared the bytes to the possible legal sequence of bytes and checked for a match.
-This was tested by providing instructions that did not match "SET,""GET," OR "DEL."
-	
-The second input needed to be a number that represented the number of incoming bytes. For this we simply checked to see if the input was a valid 
-sequence of digits and that it was a positive number.
-	
-The third input was the key value, the key needed to be a string ending in a newline. The only important part of this input for error checking was
-recording its byte size. If the initial requests made were GET or DEL, then the byte side of  the key needed to
-match those given by the second input. We recorded the second input, so after tokenizing the third input, we would compare the value of the 
-second input to the byte size of the third input and handled it accordingly depending on if they matched or not. We tested this by giving 
-mismatches between the value of the second input and the actual byte size of the third input and also by giving it correct cases.
+### Data Structure:
+We made a threadsafe linked list data structure to keep track of every (key,value) pair. A linked list provided us with easy access to data and we found that it provided an intuitive solution to the functionality required by the program.
 
-The fourth input only occurred when the request made was for SET. Again, we recorded the number of expected bytes provided by the second input
-and used it to compare it to the byte size of the key + the byte size of the value and checked to see if both values matched up. We tested this by
-providing keys and values that did not have a byte sum that equaled the second input and cases where they did match. 
+### Parsing and Handling Client Input:
+** Overall Approach **
+The approach we took to read the input from the client was a byte-by-byte approach. We parsed each input and tokenized it to make sure
+that it was formatted correctly, which in this program means that every input must end with a newline byte. We tested this by giving it illegal inputs that were formatted incorrectly and made sure that our program caught them and responded appropriately.
 
-After ensuring that each input was correctly handled by the program, we needed to make sure that our data structure was correctly keeping track of the keys and values provided by the client(s), that  each request "GET,""SET," and "DEL" was interacting with the data structure accordingly, and that error messages were printed accordingly.
+** First Instruction **
+The first set of instructions was trivial to verify because the only legal input consisted of a total of 4 bytes, so any input that was not 4 bytes had to be incorrect. If 4 bytes were given as input then we compared the bytes to the 3 legal inputs -- "SET", "GET", and "DEL" -- and checked for a match. We tested this by providing input that did not match "SET", "GET", OR "DEL" and made sure the program responded appropriately.
 
--"SET":
-	After every SET request we printed our data structure on the server side to to see if the keys and values were kept correctly. We would test this
-	by providing a combination of new keys and old keys that were to be updated. We would continously provide these sort of test cases and ensure that
-	the printed data structure was representative of the set of values we were expecting to see. After every SET, the client receive a "OKS" message to
-	notify them that their request was executed.
+** Second Instruction **
+The second instruction needed to be a positive integer that represented the number of incoming bytes for the key and/or value. To verify that the 2nd input was legal, we checked to see if the input was a valid sequence of digits and that it was a positive number.
 
-	Our appraich always stored the key string in a variable that was malloced and the same happed with the value string whenever the request was for 
-	SET. If the key already existed, we only freed the key variable that was used to check if the key was already in the data structure. If the key was
-	not in the data structure we would just add the key and value and pass ownership to the data structure, which was freed at the end.
+** Third Instruction **
+The third instruction was the key/value. The key needed to be a string ending in a newline. The only important part of this input for error checking was recording its byte size. If the initial requests made were GET or DEL, then the byte size of the key needed to
+match the input given by the second instruction. To ensure the third instruction was legal, we compared the value of the second input to the byte size of the third input, returned an error if they did not match. We tested this by providing input that was purposefully larger or smaller than the value of the second instruction.
 
--"DEL": 
-	Similarly to SET, we continously printed our data structure after each DEL request to ensure that the data structure was updated correctly. DEL 
-	requests were tested by providing DEL request with keys that were and were not in the data strcuture. When a key was in the data structure, the
-	client receives a "OKD" message to notify them that the key has been unset and deleted followed by the byte size of its value and the value itself.
-	If the provided key was not found, then the client receives a "KNF" message to notify them that the key was not found. We found that after each
-	DEL request our data structure printed the correct data and thus believed it to be deleting keys correctly.
+** Fourth Instruction **
+The fourth instruction is only neccessary when the first instruction is "SET". Similar to the third instruction case, we ensured this input was legal by adding its byte size to the byte size of the third instruction (the key) and making sure the sum was equivalent to the second instruction. We tested this by purposefully providing keys and values that did not have a byte size which summed up to be equivalent to the second input.
 
-	Our appraoch always stored the key string in a variable that was malloced, so we made sure to free the key value alone if the key was not present 
-	and we made sure to free both the key and value string if they key was indeed present.
+### Testing Responses to Client Input
+After ensuring that each input was correctly handled by the program, we needed to make sure that our data structure was correctly keeping track of the keys and values provided by the client(s), specifically that each request -- "GET", "SET", and "DEL" -- was interacting with the data structure appropriately, and that error messages were printed appropriately.
 
--"GET":
-	GET was tested by providing the SET request with words that were and were not in the data structure. After confirming that SET and DEL were working
-	correctly, we were confident that the data structure should be storing the correct key,value set at all times and simply traversed the data 
-	structure in search for the provided key in the GET request. This was tested by providing GET requests with keys that were and were not present in
-	the data structure and validating the responses that we were getting, as we know what the responses were supposed to be.	 
+** "SET" **
+After every SET request we printed our data structure on the server side to ensure that the keys and values were stored correctly. We would test this by providing a combination of new keys and old keys that were to be updated. We provided an assortment of test cases to ensure that the resulting output of the data structure was correct. After every "SET", the client receives a "OKS" message to
+notify them that their request was executed successfully.
 
-	For GET we only used a malloced key variable to store the key and used it to compare, so at the end of the request this was th eonly thing that
-	was freed, since GET did not delete nor add anything to the data structure.
+** "DEL" **
+After every DEL request, we printed our data structure on the server side to ensure that DEL worked properly and our data structure was updated correctly. We tested this part by providing DEL requests for both existent and nonexistent keys in our data structure and verifying that the output to the client was correct eitherways. 
+When the key existed in the data structure, the client receives a "OKD" message to notify them that the key and its associated value has been removed and deleted. We also output the byte size of the value and then the value itself.
+If the provided key was not found, then the client receives a "KNF" message to notify them that the key was not found. We ensured that after each DEL request our data structure printed the correct data.
+
+** "GET" **
+After every GET request, we printed our data structure on the server side to ensure that GET worked properly. We tested this part by providing GET requests for both existent and nonexistent keys in our data structure, and verifying that the output to the client was correct eitherways.
+
+### Testing Multithreading and Multiple Clients
+To ensure that the linked list data structure and the rest of the program behaved appropriately with multiple clients, we tested it by running a server and having multiple terminal windows connect simultaneously. We ran each of the above "GET" / "SET" / "DEL" instructions and varying inputs to ensure that there was no undefined behavior and that the results were accurate to what we expected. 
+
+### Extreme Cases
+We found that the server can handle messages upwards of 4096 characters long. We tested messages up to this size and ensured appropriate behavior. In the case of malloc or other rare failures, the program is designed to immediately exit with a failure code. Lastly, we tested this program with Address Sanitizer, Undefined Behavior Sanitizer, and Valgrind to make sure there are no memory leaks or undefined behavior.
