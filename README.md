@@ -5,7 +5,7 @@
 This program has a few major components that we needed to test in order to ensure that it was working correctly. The three major components are: reading and writing data from and to the client, parsing and responding appropriately to data sent from a client, and being able to handle multiple clients using multiple threads and making sure multithreading is functional.
 
 ### Usage:
-To run this program, provide it with a port number between 5000 and 65,536 as an arguement. To communicate with the server, the user can send "GET" / "SET" / "POST" instructions, followed by a positive integer representing the total byte size (**including spaces and newlines**) of the key and/or value to be stored/retrieved/deleted, and then the actual key and/or value to be stored/retrieved/deleted. Each of the arguements **must be** separated by a single newline character. Look at the following example for reference:
+To run this program, provide it with a port number between 5000 and 65,536 as an arguement. To communicate with the server, the user can send "GET" / "SET" / "DEL" instructions, followed by a positive integer representing the total byte size (**including spaces and newlines**) of the key and/or value to be stored/retrieved/deleted, and then the actual key and/or value to be stored/retrieved/deleted. Each of the arguements **must be** separated by a single newline character. Look at the following example for reference:
 
 	SET			<== First Instruction must be "SET", "GET", or "DEL"
 	11			<== Second Instruction must be the total number of bytes of the key and/or value (Including spaces and newlines)
