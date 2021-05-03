@@ -196,11 +196,12 @@ void *echo(void *arg) {
     int DEL = 0;
     long int getLoad = 0;
     int getKey = 0;
+    int loadBytes = 0;
 
     char* value = NULL;
     char* key = NULL;
+    char* load =  NULL;
 
-    // DELETE THIS FOR SQAURE ONE
     while ((nread = read(c->fd, &currChar, 1)) > 0) {
         //if (DEBUG) printf("GET: %d\tSET: %d: DEL: %d\tInput: %s", GET, SET, DEL, buf);
         int bytesRead = 0;
@@ -208,7 +209,7 @@ void *echo(void *arg) {
             if(bytesRead == BUFSIZE) {
                 buf = realloc(buf, sizeof(char) * BUFSIZE * 2);
                 if(buf == NULL) {
-                    write(c->fd, "SRV\n", 4);
+                    write(c->fd, "ERR\nSRV\n", 8);
                     perror("Realloc Failed in echo() with buf");
                     abort();
                 }
@@ -221,7 +222,7 @@ void *echo(void *arg) {
         if((bytesRead+2) >= BUFSIZE) {
             buf = realloc(buf, sizeof(char) * BUFSIZE * 2);
             if(buf == NULL) {
-                write(c->fd, "SRV\n", 4);
+                write(c->fd, "ERR\nSRV\n", 8);
                 perror("Realloc Failed in echo() with buf");
                 abort();
             }
@@ -236,7 +237,7 @@ void *echo(void *arg) {
 
         if(getRequest == 0) {
             if(bytesRead != 4) {
-                write(c->fd, "BAD\n", 4);
+                write(c->fd, "ERR\nBAD\n", 8);
                 break;
             }
             char key1[] = "GET";
@@ -258,14 +259,14 @@ void *echo(void *arg) {
                 if(DEBUG) printf("Input size (in bytes): %ld\tRequest made: %s", strlen(buf),buf);
             }
             else {
-                write(c->fd, "BAD\n", 4);
+                write(c->fd, "ERR\nBAD\n", 8);
                 break;
             }
         }
         else if(getLoad == 0) {
             for(int i = 0; i < bytesRead-1; i++) {
                 if(!isdigit(buf[i])) {
-                    write(c->fd, "BAD\n", 4);
+                    write(c->fd, "ERR\nBAD\n", 8);
                     getRequest = 0;
                     getLoad = -1;
                     break;
@@ -278,10 +279,24 @@ void *echo(void *arg) {
             if(DEBUG) printf("Input size (in bytes): %ld\tLoad: %ld\n", strlen(buf), atol(buf));
             if(atol(buf) <= 0) {
                 getRequest = 0;
-                write(c->fd, "BAD\n", 4);
+                write(c->fd, "ERR\nBAD\n", 8);
                 break;
             }
-            else getLoad = atol(buf);
+            else {
+                getLoad = atol(buf);
+                loadBytes = bytesRead;
+                load = malloc(sizeof(char) * loadBytes);
+                if(load == NULL) {
+                    write(c->fd, "ERR\nSRV\n", 8);
+                    perror("Realloc Failed in echo() with buf");
+                    free(buf);
+                    abort();
+                }
+                for(int i = 0; i < bytesRead-1; i++) {
+                    load[i] = buf[i];
+                }
+                load[loadBytes-1] = '\0';
+            }
         }
         else if(getKey == 0) {
             key = calloc(bytesRead, sizeof(char));
@@ -295,7 +310,7 @@ void *echo(void *arg) {
                 if(getLoad != bytesRead) {
                     getRequest = 0;
                     getLoad = 0;
-                    write(c->fd, "LEN\n", 4);
+                    write(c->fd, "ERR\nLEN\n", 4);
                     break;
                 }
                 else {
@@ -304,9 +319,10 @@ void *echo(void *arg) {
                     else {
                         write(c->fd, "OKG\n", 4);
 
-                        char out[strlen(value)];
-                        sprintf(out, "%ld\n", strlen(value) + 1);
-                        write(c->fd, &out, strlen(value)-1);
+                        //char out[strlen(value)];
+                        //sprintf(out, "%ld\n", strlen(value) + 1);
+                        write(c->fd, load, loadBytes);
+                        write(c->fd, "\n", 1);
 
                         write(c->fd, value, strlen(value));
                         write(c->fd, "\n", 1);
@@ -314,6 +330,8 @@ void *echo(void *arg) {
                     free(key);
                     key = NULL;
                     value = NULL;
+                    free(load);
+                    load = NULL;
                     GET = 0;
                 }
             }
@@ -324,7 +342,7 @@ void *echo(void *arg) {
                     if(bytesRead == BUFSIZE) {
                         buf = realloc(buf, sizeof(char) * BUFSIZE * 2);
                         if(buf == NULL) {
-                            write(c->fd, "SRV\n", 4);
+                            write(c->fd, "ERR\nSRV\n", 8);
                             perror("Realloc Failed in echo() with buf");
                             abort();
                         }
@@ -336,7 +354,7 @@ void *echo(void *arg) {
                 if((bytesRead+2) >= BUFSIZE) {
                     buf = realloc(buf, sizeof(char) * BUFSIZE * 2);
                     if(buf == NULL) {
-                        write(c->fd, "SRV\n", 4);
+                        write(c->fd, "ERR\nSRV\n", 8);
                         abort();
                     }
                     BUFSIZE *= 2;
@@ -360,7 +378,7 @@ void *echo(void *arg) {
                 if((bytesRead + keyBytes) != getLoad) {
                     getRequest = 0;
                     getLoad = 0;
-                    write(c->fd, "LEN\n", 4);
+                    write(c->fd, "ERR\nLEN\n", 8);
                     break;
                 }
                 else {
@@ -371,27 +389,32 @@ void *echo(void *arg) {
                     SET = 0;
                     key = NULL;
                     value = NULL;
+                    free(load);
+                    load = NULL;
                 }
             }
             else if(DEL == 1) {
                 if(getLoad != bytesRead) {
                     getRequest = 0;
                     getLoad = 0;
-                    write(c->fd, "LEN\n", 4);
+                    write(c->fd, "ERR\nLEN\n", 8);
                     break;
                 }
                 else {
-                    if (DEBUG) printf("Delete key\n");
-
                     value = getValueAtKey(keys, key);
-                    if(value == NULL) write(c->fd, "KNF\n", 4);
+                    if(value == NULL) {
+                        free(key);
+                        key = NULL;
+                        write(c->fd, "KNF\n", 4);
+                    }
                     else {
                         value = deleteKey(keys, key);
                         write(c->fd, "OKD\n", 4);
 
-                        char out[strlen(value)];
-                        sprintf(out, "%ld\n", strlen(value) + 1);
-                        write(c->fd, &out, strlen(value)-1);
+                        //char out[strlen(value)];
+                        //sprintf(out, "%ld\n", strlen(value) + 1);
+                        write(c->fd, load, loadBytes);
+                        write(c->fd, "\n", 1);
 
                         write(c->fd, value, strlen(value));
                         write(c->fd, "\n", 1);
@@ -402,6 +425,8 @@ void *echo(void *arg) {
                         key = NULL;
                     }
                     DEL = 0;
+                    free(load);
+                    load = NULL;
                 }
             }
             getRequest = 0;
@@ -418,6 +443,8 @@ void *echo(void *arg) {
         free(key);
     if(value != NULL)
         free(value);
+    if(load != NULL) 
+        free(load);
     free(buf);
     close(c->fd);
     free(c);
