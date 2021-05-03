@@ -10,7 +10,7 @@ To run this program, provide it with a port number between 5000 and 65,536 as an
 	SET			<== First Instruction must be "SET", "GET", or "DEL"
 	11			<== Second Instruction must be the total number of bytes of the key and/or value (Including spaces and newlines)
 	Day			<== Third Instruction must be the key to be stored/retrieved/deleted
-	Sunday			<== Fourth Instruction must be the associated value to be stored. **This should only be sent when the first instruction is "SET"**
+	Sunday			<== Fourth Instruction must be the associated value to be stored. This should only be sent when the first instruction is "SET"
 
 ### Data Structure:
 We made a threadsafe linked list data structure to keep track of every (key,value) pair. A linked list provides us with easy access to the data and we found that it provides an intuitive solution to the functionality required by the program.
