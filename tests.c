@@ -55,12 +55,9 @@ int server(char *port)
     memset(&hint, 0, sizeof(struct addrinfo));
     hint.ai_family = AF_UNSPEC;
     hint.ai_socktype = SOCK_STREAM;
-    hint.ai_flags = AI_PASSIVE;
-    	// setting AI_PASSIVE means that we want to create a listening socket
+    hint.ai_flags = AI_PASSIVE; // setting AI_PASSIVE means that we want to create a listening socket
 
-    // get socket and address info for listening port
-    // - for a listening socket, give NULL as the host name (because the socket is on
-    //   the local host)
+
     error = getaddrinfo(NULL, port, &hint, &info_list);
     if (error != 0) {
         fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(error));
@@ -76,18 +73,11 @@ int server(char *port)
             continue;
         }
 
-        // if we were able to create the socket, try to set it up for
-        // incoming connections;
-        // 
-        // note that this requires two steps:
-        // - bind associates the socket with the specified port on the local host
-        // - listen sets up a queue for incoming connections and allows us to use accept
         if ((bind(sfd, info->ai_addr, info->ai_addrlen) == 0) &&
             (listen(sfd, BACKLOG) == 0)) {
             break;
         }
 
-        // unable to set it up, so try the next method
         close(sfd);
     }
 
@@ -116,21 +106,14 @@ int server(char *port)
 	while (running) {
     	// create argument struct for child thread
 		con = malloc(sizeof(struct connection));
+        if(con==NULL){
+            perror("Malloc Failed in server initiziling con");
+            exit(EXIT_FAILURE);
+        }
         con->addr_len = sizeof(struct sockaddr_storage);
-        	// addr_len is a read/write parameter to accept
-        	// we set the initial value, saying how much space is available
-        	// after the call to accept, this field will contain the actual address length
         
         // wait for an incoming connection
         con->fd = accept(sfd, (struct sockaddr *) &con->addr, &con->addr_len);
-        	// we provide
-        	// sfd - the listening socket
-        	// &con->addr - a location to write the address of the remote host
-        	// &con->addr_len - a location to write the length of the address
-        	//
-        	// accept will block until a remote host tries to connect
-        	// it returns a new socket that can be used to communicate with the remote
-        	// host, and writes the address of the remote hist into the provided location
         
         // if we got back -1, it means something went wrong
         if (con->fd == -1) {
@@ -183,6 +166,10 @@ void *echo(void *arg) {
    // char* load = NULL;
     int BUFSIZE = 8;
     char* buf = malloc(sizeof(char) * BUFSIZE);
+    if(buf == NULL){
+        perror("Malloc Failed in echo() initializing buf");
+        exit(EXIT_FAILURE);
+    }
     char currChar; 
     char host[100], port[10];
     struct connection *c = (struct connection *) arg;
@@ -222,6 +209,7 @@ void *echo(void *arg) {
                 buf = realloc(buf, sizeof(char) * BUFSIZE * 2);
                 if(buf == NULL) {
                     write(c->fd, "SRV\n", 4);
+                    perror("Realloc Failed in echo() with buf");
                     abort();
                 }
                 BUFSIZE *= 2;
@@ -234,6 +222,7 @@ void *echo(void *arg) {
             buf = realloc(buf, sizeof(char) * BUFSIZE * 2);
             if(buf == NULL) {
                 write(c->fd, "SRV\n", 4);
+                perror("Realloc Failed in echo() with buf");
                 abort();
             }
             BUFSIZE *= 2;
@@ -296,6 +285,10 @@ void *echo(void *arg) {
         }
         else if(getKey == 0) {
             key = calloc(bytesRead, sizeof(char));
+            if(key == NULL){
+                perror("Calloc Failed in echo() with key");
+                exit(EXIT_FAILURE);
+            }
             memcpy(key, buf, bytesRead-1);
             if (DEBUG) printf("Input size (in bytes): %ld\tKey: %s\n", strlen(buf), key);
             if(GET == 1) {
@@ -332,6 +325,7 @@ void *echo(void *arg) {
                         buf = realloc(buf, sizeof(char) * BUFSIZE * 2);
                         if(buf == NULL) {
                             write(c->fd, "SRV\n", 4);
+                            perror("Realloc Failed in echo() with buf");
                             abort();
                         }
                         BUFSIZE *= 2;
@@ -356,6 +350,10 @@ void *echo(void *arg) {
 
                 
                 value = calloc(bytesRead , sizeof(char));
+                if(value == NULL){
+                    perror("Realloc Failed in echo() with value");
+                    exit(EXIT_FAILURE);
+                }
                 memcpy(value, buf, bytesRead-1);
                 if(DEBUG) printf("Input size (in bytes): %ld\tValue: %s\n", strlen(buf), value);
                 int keyBytes = strlen(key) + 1;

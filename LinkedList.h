@@ -18,7 +18,12 @@ LinkedList* initLL(){
         exit(EXIT_FAILURE);
     }
     ll->head = NULL;
-    pthread_mutex_init(&ll->llLock, NULL);
+    if(pthread_mutex_init(&ll->llLock, NULL) != 0){
+        perror("Mutex Failure to Init");
+        free(ll);
+        exit(EXIT_FAILURE);
+    }
+
     return ll;
 }
 
@@ -40,26 +45,11 @@ bool addNode(LinkedList* ll, char* key, char* value){
 
     pthread_mutex_lock(&ll->llLock);
     if(ll->head == NULL){
-        //printf("Emptry Head Not Anymore: %s\n", key);
         ll->head = temp;
     }else{
-       // printf("Head Full : ");
         Node* prev = NULL;
         Node* ptr = ll->head;
-        printf("%s\n", ptr->key);
         while(ptr != NULL){
-            /*if(strcmp(key, ptr->key) <= 0){
-                if( prev == NULL ){
-                    ll->head = temp;
-                    temp->next = ptr;
-                }else{
-                    prev->next = temp;
-                    temp->next = ptr;
-                }
-
-                pthread_mutex_unlock(&ll->llLock);
-                return true;
-            }*/
             prev = ptr;
             ptr = ptr->next;
         }
