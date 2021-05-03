@@ -221,7 +221,7 @@ void *echo(void *arg) {
             if(bytesRead == BUFSIZE) {
                 buf = realloc(buf, sizeof(char) * BUFSIZE * 2);
                 if(buf == NULL) {
-                    printf("SRV\n");
+                    write(c->fd, "SRV\n", 4);
                     abort();
                 }
                 BUFSIZE *= 2;
@@ -233,7 +233,7 @@ void *echo(void *arg) {
         if((bytesRead+2) >= BUFSIZE) {
             buf = realloc(buf, sizeof(char) * BUFSIZE * 2);
             if(buf == NULL) {
-                printf("SRV\n");
+                write(c->fd, "SRV\n", 4);
                 abort();
             }
             BUFSIZE *= 2;
@@ -247,7 +247,7 @@ void *echo(void *arg) {
 
         if(getRequest == 0) {
             if(bytesRead != 4) {
-                printf("BAD\n");
+                write(c->fd, "BAD\n", 4);
                 break;
             }
             char key1[] = "GET";
@@ -269,14 +269,14 @@ void *echo(void *arg) {
                 if(DEBUG) printf("Input size (in bytes): %ld\tRequest made: %s", strlen(buf),buf);
             }
             else {
-                printf("BAD\n");
+                write(c->fd, "BAD\n", 4);
                 break;
             }
         }
         else if(getLoad == 0) {
             for(int i = 0; i < bytesRead-1; i++) {
                 if(!isdigit(buf[i])) {
-                    printf("BAD\n");
+                    write(c->fd, "BAD\n", 4);
                     getRequest = 0;
                     getLoad = -1;
                     break;
@@ -289,7 +289,7 @@ void *echo(void *arg) {
             if(DEBUG) printf("Input size (in bytes): %ld\tLoad: %ld\n", strlen(buf), atol(buf));
             if(atol(buf) <= 0) {
                 getRequest = 0;
-                printf("BAD\n");
+                write(c->fd, "BAD\n", 4);
                 break;
             }
             else getLoad = atol(buf);
@@ -297,26 +297,19 @@ void *echo(void *arg) {
         else if(getKey == 0) {
             key = calloc(bytesRead, sizeof(char));
             memcpy(key, buf, bytesRead-1);
-            fflush(stdout);
             if (DEBUG) printf("Input size (in bytes): %ld\tKey: %s\n", strlen(buf), key);
             if(GET == 1) {
                 if(getLoad != bytesRead) {
                     getRequest = 0;
                     getLoad = 0;
-                    printf("LEN\n"); 
+                    write(c->fd, "LEN\n", 4);
                     break;
                 }
                 else {
                     value = getValueAtKey(keys, key);
-                    if(value == NULL) write(c->fd, "KNF\n", 4); // if(value == NULL) printf("KNF\n");
+                    if(value == NULL) write(c->fd, "KNF\n", 4);
                     else {
-                        // char* output = ("OKG\n%ld\n%s\n\0", strlen(value)+1, value);
-                        // write(c->fd, output, strlen(output));
                         write(c->fd, "OKG\n", 4);
-                        // long out = htonl(strlen(value) + 1);
-                        // write(c->fd, &out, sizeof(out));
-                        // int out = strlen(value) + 1;
-                        // write(c->fd, &out, sizeof(out));
 
                         char out[strlen(value)];
                         sprintf(out, "%ld\n", strlen(value) + 1);
@@ -324,9 +317,7 @@ void *echo(void *arg) {
 
                         write(c->fd, value, strlen(value));
                         write(c->fd, "\n", 1);
-                        // fprintf(c->fd, "OKG\n%ld\n%s\n", strlen(value)+1, value);
-                        // printf("OKG\n%ld\n%s\n", strlen(value)+1, value);
-                    } // else printf("OKG\n%ld\n%s\n", strlen(value)+1, value);
+                    }
                     free(key);
                     key = NULL;
                     value = NULL;
@@ -340,7 +331,7 @@ void *echo(void *arg) {
                     if(bytesRead == BUFSIZE) {
                         buf = realloc(buf, sizeof(char) * BUFSIZE * 2);
                         if(buf == NULL) {
-                            write(c->fd, "SRV\n", 4); // printf("SRV\n");
+                            write(c->fd, "SRV\n", 4);
                             abort();
                         }
                         BUFSIZE *= 2;
@@ -371,15 +362,14 @@ void *echo(void *arg) {
                 if((bytesRead + keyBytes) != getLoad) {
                     getRequest = 0;
                     getLoad = 0;
-                    write(c->fd, "LEN\n", 4); // printf("LEN\n"); 
+                    write(c->fd, "LEN\n", 4);
                     break;
                 }
                 else {
                     char* temp = getValueAtKey(keys, key);
                     if(temp == NULL) addNode(keys, key, value);
                     else changeNodeValue(keys, key, value);
-                    
-                    write(c->fd, "OKS\n", 4); //printf("OKS\n");
+                    write(c->fd, "OKS\n", 4);
                     SET = 0;
                     key = NULL;
                     value = NULL;
@@ -389,14 +379,14 @@ void *echo(void *arg) {
                 if(getLoad != bytesRead) {
                     getRequest = 0;
                     getLoad = 0;
-                    write(c->fd, "LEN\n", 4); //printf("LEN\n"); 
+                    write(c->fd, "LEN\n", 4);
                     break;
                 }
                 else {
                     if (DEBUG) printf("Delete key\n");
 
                     value = getValueAtKey(keys, key);
-                    if(value == NULL) write(c->fd, "KNF\n", 4); //printf("KNF\n");
+                    if(value == NULL) write(c->fd, "KNF\n", 4);
                     else {
                         value = deleteKey(keys, key);
                         write(c->fd, "OKD\n", 4);
@@ -408,7 +398,6 @@ void *echo(void *arg) {
                         write(c->fd, value, strlen(value));
                         write(c->fd, "\n", 1);
                         
-                        // printf("OKD\n%ld\n%s\n", strlen(value)+1, value);
                         free(key);
                         free(value);
                         value = NULL;
