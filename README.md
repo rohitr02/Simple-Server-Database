@@ -21,17 +21,17 @@ This was tested by providing instructions that did not match "SET,""GET," OR "DE
 The second input needed to be a number that represented the number of incoming bytes. For this we simply checked to see if the input was a valid 
 sequence of digits and that it was a positive number.
 	
-The third input was the key value, the Key needed to be a string ending in a newline. The only important part of this input for error checking was
-recording how many bytes it consisted of. If the initial requests made were GET or DEL, then the number of bytes provided by the key needed to
+The third input was the key value, the key needed to be a string ending in a newline. The only important part of this input for error checking was
+recording its byte size. If the initial requests made were GET or DEL, then the byte side of  the key needed to
 match those given by the second input. We recorded the second input, so after tokenizing the third input, we would compare the value of the 
-second input to the byte size of the third input and handled it accordingly depening on if they matched or not. We tested this by giving 
-mismatches between the value of the second input and the actual number of bytes in the third input and by giving it correct cases.
+second input to the byte size of the third input and handled it accordingly depending on if they matched or not. We tested this by giving 
+mismatches between the value of the second input and the actual byte size of the third input and also by giving it correct cases.
 
 The fourth input only occurred when the request made was for SET. Again, we recorded the number of expected bytes provided by the second input
 and used it to compare it to the byte size of the key + the byte size of the value and checked to see if both values matched up. We tested this by
 providing keys and values that did not have a byte sum that equaled the second input and cases where they did match. 
 
-After ensuring that each input was correcctly handled by the program, we needed to make sure that our data structure was correctly keeping track of the keys and values provided by the client(s), that  each request "GET,""SET," and "DEL" was interacting with the data structure accordingly, and that error messages were printed accordingly.
+After ensuring that each input was correctly handled by the program, we needed to make sure that our data structure was correctly keeping track of the keys and values provided by the client(s), that  each request "GET,""SET," and "DEL" was interacting with the data structure accordingly, and that error messages were printed accordingly.
 
 -"SET":
 	After every SET request we printed our data structure on the server side to to see if the keys and values were kept correctly. We would test this
