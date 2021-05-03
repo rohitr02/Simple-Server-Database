@@ -48,5 +48,5 @@ After every GET request, we printed our data structure on the server side to ens
 ### Testing Multithreading and Multiple Clients:
 To ensure that the linked list data structure and the rest of the program behaved appropriately with multiple clients, we tested it by running a server and having multiple terminal windows connect simultaneously. We ran each of the above "GET" / "SET" / "DEL" instructions with varying inputs to ensure that there was no undefined behavior and that the results were accurate to what we expected. 
 
-### Extreme Cases
+### Extreme Cases:
 We found that the server can handle messages upwards of 4096 characters long. We tested messages up to this size and ensured appropriate behavior. In the case of malloc or other rare failures, the program is designed to immediately exit with EXIT_FAILURE. Lastly, we tested this program with Address Sanitizer, Undefined Behavior Sanitizer, and Valgrind to make sure there are no memory leaks or undefined behavior.
