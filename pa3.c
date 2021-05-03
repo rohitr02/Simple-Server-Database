@@ -291,6 +291,7 @@ void *echo(void *arg) {
             key = calloc(bytesRead, sizeof(char));
             if(key == NULL){
                 perror("Calloc Failed in echo() with key");
+                free(buf);
                 exit(EXIT_FAILURE);
             }
             memcpy(key, buf, bytesRead-1);
@@ -312,6 +313,8 @@ void *echo(void *arg) {
                         load = malloc(sizeof(char) * len);
                         if (load == NULL){
                             perror("Malloc Failure in echo() for load");
+                            free(key);
+                            free(buf);
                             exit(EXIT_FAILURE);
                         }
                         snprintf(load, len, "%ld", strlen(value)+1);
@@ -339,6 +342,7 @@ void *echo(void *arg) {
                         if(buf == NULL) {
                             write(c->fd, "ERR\nSRV\n", 8);
                             perror("Realloc Failed in echo() with buf");
+                            free(key);
                             abort();
                         }
                         BUFSIZE *= 2;
@@ -350,6 +354,8 @@ void *echo(void *arg) {
                     buf = realloc(buf, sizeof(char) * BUFSIZE * 2);
                     if(buf == NULL) {
                         write(c->fd, "ERR\nSRV\n", 8);
+                        perror("Realloc Failed in echo() with buf");
+                        free(key);
                         abort();
                     }
                     BUFSIZE *= 2;
@@ -365,6 +371,8 @@ void *echo(void *arg) {
                 value = calloc(bytesRead , sizeof(char));
                 if(value == NULL){
                     perror("Realloc Failed in echo() with value");
+                    free(buf);
+                    free(key);
                     exit(EXIT_FAILURE);
                 }
                 memcpy(value, buf, bytesRead-1);
@@ -411,6 +419,8 @@ void *echo(void *arg) {
                         load = malloc(sizeof(char) * len);
                         if (load == NULL){
                             perror("Malloc Failure in echo() for load");
+                            free(buf);
+                            free(key);
                             exit(EXIT_FAILURE);
                         }
                         snprintf(load, len, "%ld", strlen(value)+1);
@@ -441,10 +451,8 @@ void *echo(void *arg) {
 
     printf("[%s:%s] disconnected\n", host, port);
     fflush(stdout);
-    if(key != NULL)
-        free(key);
-    if(value != NULL)
-        free(value);
+    if(key != NULL) free(key);
+    if(value != NULL) free(value);
     free(buf);
     close(c->fd);
     free(c);
