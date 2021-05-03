@@ -333,7 +333,7 @@ void *echo(void *arg) {
                     GET = 0;
                 }
             }
-            if(SET == 1) {
+            else if(SET == 1) {
                 read(c->fd, &currChar, 1);
                 int bytesRead = 0;
                 while(currChar != '\n') {
@@ -381,9 +381,11 @@ void *echo(void *arg) {
                     
                     write(c->fd, "OKS\n", 4); //printf("OKS\n");
                     SET = 0;
+                    key = NULL;
+                    value = NULL;
                 }
             }
-            if(DEL == 1) {
+            else if(DEL == 1) {
                 if(getLoad != bytesRead) {
                     getRequest = 0;
                     getLoad = 0;
