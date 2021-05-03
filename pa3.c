@@ -290,6 +290,7 @@ void *echo(void *arg) {
         else if(getKey == 0) {
             key = calloc(bytesRead, sizeof(char));
             if(key == NULL){
+                write(c->fd, "ERR\nSRV\n", 8);
                 perror("Calloc Failed in echo() with key");
                 free(buf);
                 exit(EXIT_FAILURE);
@@ -307,16 +308,17 @@ void *echo(void *arg) {
                     value = getValueAtKey(keys, key);
                     if(value == NULL) write(c->fd, "KNF\n", 4);
                     else {
-                        write(c->fd, "OKG\n", 4);
 
                         long int len = snprintf( NULL, 0, "%ld", strlen(value)+1) + 1;
                         load = malloc(sizeof(char) * len);
                         if (load == NULL){
+                            write(c->fd, "ERR\nSRV\n", 8);
                             perror("Malloc Failure in echo() for load");
                             free(key);
                             free(buf);
                             exit(EXIT_FAILURE);
                         }
+                        write(c->fd, "OKG\n", 4);
                         snprintf(load, len, "%ld", strlen(value)+1);
                         write(c->fd, load, len);
                         write(c->fd, "\n", 1);
@@ -370,6 +372,7 @@ void *echo(void *arg) {
                 
                 value = calloc(bytesRead , sizeof(char));
                 if(value == NULL){
+                    write(c->fd, "ERR\nSRV\n", 8);
                     perror("Realloc Failed in echo() with value");
                     free(buf);
                     free(key);
@@ -418,6 +421,7 @@ void *echo(void *arg) {
                         long int len = snprintf( NULL, 0, "%ld", strlen(value)+1) + 1;
                         load = malloc(sizeof(char) * len);
                         if (load == NULL){
+                            write(c->fd, "ERR\nSRV\n", 8);
                             perror("Malloc Failure in echo() for load");
                             free(buf);
                             free(key);
