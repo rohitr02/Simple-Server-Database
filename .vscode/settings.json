@@ -1,5 +1,6 @@
 {
     "files.associations": {
-        "linkedlist.h": "c"
+        "linkedlist.h": "c",
+        "signal.h": "c"
     }
 }
