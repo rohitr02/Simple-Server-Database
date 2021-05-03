@@ -9,6 +9,7 @@
 #include <signal.h>
 #include <pthread.h>
 #include <ctype.h>
+#include <math.h>
 #include "LinkedList.h"
 #define BACKLOG 5
 
@@ -196,11 +197,10 @@ void *echo(void *arg) {
     int DEL = 0;
     long int getLoad = 0;
     int getKey = 0;
-    int loadBytes = 0;
 
     char* value = NULL;
     char* key = NULL;
-    char* load =  NULL;
+    char* load = NULL;
 
     while ((nread = read(c->fd, &currChar, 1)) > 0) {
         //if (DEBUG) printf("GET: %d\tSET: %d: DEL: %d\tInput: %s", GET, SET, DEL, buf);
@@ -282,21 +282,7 @@ void *echo(void *arg) {
                 write(c->fd, "ERR\nBAD\n", 8);
                 break;
             }
-            else {
-                getLoad = atol(buf);
-                loadBytes = bytesRead;
-                load = malloc(sizeof(char) * loadBytes);
-                if(load == NULL) {
-                    write(c->fd, "ERR\nSRV\n", 8);
-                    perror("Realloc Failed in echo() with buf");
-                    free(buf);
-                    abort();
-                }
-                for(int i = 0; i < bytesRead-1; i++) {
-                    load[i] = buf[i];
-                }
-                load[loadBytes-1] = '\0';
-            }
+            else getLoad = atol(buf);
         }
         else if(getKey == 0) {
             key = calloc(bytesRead, sizeof(char));
@@ -319,19 +305,21 @@ void *echo(void *arg) {
                     else {
                         write(c->fd, "OKG\n", 4);
 
-                        //char out[strlen(value)];
-                        //sprintf(out, "%ld\n", strlen(value) + 1);
-                        write(c->fd, load, loadBytes);
+                        long int len = snprintf( NULL, 0, "%ld", strlen(value)+1) + 1;
+                        load = malloc(sizeof(char) * len);
+                        snprintf(load, len, "%ld", strlen(value)+1);
+                        write(c->fd, load, len);
                         write(c->fd, "\n", 1);
 
                         write(c->fd, value, strlen(value));
                         write(c->fd, "\n", 1);
+
+                        free(load);
+                        load = NULL;
                     }
                     free(key);
                     key = NULL;
                     value = NULL;
-                    free(load);
-                    load = NULL;
                     GET = 0;
                 }
             }
@@ -389,8 +377,6 @@ void *echo(void *arg) {
                     SET = 0;
                     key = NULL;
                     value = NULL;
-                    free(load);
-                    load = NULL;
                 }
             }
             else if(DEL == 1) {
@@ -411,9 +397,10 @@ void *echo(void *arg) {
                         value = deleteKey(keys, key);
                         write(c->fd, "OKD\n", 4);
 
-                        //char out[strlen(value)];
-                        //sprintf(out, "%ld\n", strlen(value) + 1);
-                        write(c->fd, load, loadBytes);
+                        long int len = snprintf( NULL, 0, "%ld", strlen(value)+1) + 1;
+                        load = malloc(sizeof(char) * len);
+                        snprintf(load, len, "%ld", strlen(value)+1);
+                        write(c->fd, load, len);
                         write(c->fd, "\n", 1);
 
                         write(c->fd, value, strlen(value));
@@ -421,12 +408,12 @@ void *echo(void *arg) {
                         
                         free(key);
                         free(value);
+                        free(load);
+                        load = NULL;
                         value = NULL;
                         key = NULL;
                     }
                     DEL = 0;
-                    free(load);
-                    load = NULL;
                 }
             }
             getRequest = 0;
@@ -443,8 +430,6 @@ void *echo(void *arg) {
         free(key);
     if(value != NULL)
         free(value);
-    if(load != NULL) 
-        free(load);
     free(buf);
     close(c->fd);
     free(c);
