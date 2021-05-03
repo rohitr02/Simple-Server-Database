@@ -179,8 +179,7 @@ int server(char *port)
 
 
 void *echo(void *arg) {
-    char* value = NULL;
-    char* key = NULL;
+    
    // char* load = NULL;
     int BUFSIZE = 8;
     char* buf = malloc(sizeof(char) * BUFSIZE);
@@ -210,6 +209,10 @@ void *echo(void *arg) {
     int DEL = 0;
     long int getLoad = 0;
     int getKey = 0;
+
+    char* value = NULL;
+    char* key = NULL;
+
     // DELETE THIS FOR SQAURE ONE
     while ((nread = read(c->fd, &currChar, 1)) > 0) {
         //if (DEBUG) printf("GET: %d\tSET: %d: DEL: %d\tInput: %s", GET, SET, DEL, buf);
@@ -305,10 +308,28 @@ void *echo(void *arg) {
                 }
                 else {
                     value = getValueAtKey(keys, key);
-                    if(value == NULL) printf("KNF\n");
-                    else printf("OKG\n%ld\n%s\n", strlen(value)+1, value);
+                    if(value == NULL) write(c->fd, "KNF\n", 4); // if(value == NULL) printf("KNF\n");
+                    else {
+                        // char* output = ("OKG\n%ld\n%s\n\0", strlen(value)+1, value);
+                        // write(c->fd, output, strlen(output));
+                        write(c->fd, "OKG\n", 4);
+                        // long out = htonl(strlen(value) + 1);
+                        // write(c->fd, &out, sizeof(out));
+                        // int out = strlen(value) + 1;
+                        // write(c->fd, &out, sizeof(out));
+
+                        char out[strlen(value)];
+                        sprintf(out, "%ld\n", strlen(value) + 1);
+                        write(c->fd, &out, strlen(value)-1);
+
+                        write(c->fd, value, strlen(value));
+                        write(c->fd, "\n", 1);
+                        // fprintf(c->fd, "OKG\n%ld\n%s\n", strlen(value)+1, value);
+                        // printf("OKG\n%ld\n%s\n", strlen(value)+1, value);
+                    } // else printf("OKG\n%ld\n%s\n", strlen(value)+1, value);
                     free(key);
                     key = NULL;
+                    value = NULL;
                     GET = 0;
                 }
             }
@@ -319,7 +340,7 @@ void *echo(void *arg) {
                     if(bytesRead == BUFSIZE) {
                         buf = realloc(buf, sizeof(char) * BUFSIZE * 2);
                         if(buf == NULL) {
-                            printf("SRV\n");
+                            write(c->fd, "SRV\n", 4); // printf("SRV\n");
                             abort();
                         }
                         BUFSIZE *= 2;
@@ -330,7 +351,7 @@ void *echo(void *arg) {
                 if((bytesRead+2) >= BUFSIZE) {
                     buf = realloc(buf, sizeof(char) * BUFSIZE * 2);
                     if(buf == NULL) {
-                        printf("SRV\n");
+                        write(c->fd, "SRV\n", 4);
                         abort();
                     }
                     BUFSIZE *= 2;
@@ -350,7 +371,7 @@ void *echo(void *arg) {
                 if((bytesRead + keyBytes) != getLoad) {
                     getRequest = 0;
                     getLoad = 0;
-                    printf("LEN\n"); 
+                    write(c->fd, "LEN\n", 4); // printf("LEN\n"); 
                     break;
                 }
                 else {
@@ -358,7 +379,7 @@ void *echo(void *arg) {
                     if(temp == NULL) addNode(keys, key, value);
                     else changeNodeValue(keys, key, value);
                     
-                    printf("OKS\n");
+                    write(c->fd, "OKS\n", 4); //printf("OKS\n");
                     SET = 0;
                 }
             }
@@ -366,17 +387,26 @@ void *echo(void *arg) {
                 if(getLoad != bytesRead) {
                     getRequest = 0;
                     getLoad = 0;
-                    printf("LEN\n"); 
+                    write(c->fd, "LEN\n", 4); //printf("LEN\n"); 
                     break;
                 }
                 else {
                     if (DEBUG) printf("Delete key\n");
 
                     value = getValueAtKey(keys, key);
-                    if(value == NULL) printf("KNF\n");
+                    if(value == NULL) write(c->fd, "KNF\n", 4); //printf("KNF\n");
                     else {
                         value = deleteKey(keys, key);
-                        printf("OKD\n%ld\n%s\n", strlen(value)+1, value);
+                        write(c->fd, "OKD\n", 4);
+
+                        char out[strlen(value)];
+                        sprintf(out, "%ld\n", strlen(value) + 1);
+                        write(c->fd, &out, strlen(value)-1);
+
+                        write(c->fd, value, strlen(value));
+                        write(c->fd, "\n", 1);
+                        
+                        // printf("OKD\n%ld\n%s\n", strlen(value)+1, value);
                         free(key);
                         free(value);
                         value = NULL;
