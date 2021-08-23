@@ -1,7 +1,7 @@
 Pauli Peralta and Rohit Rao
 
 ### Brief Description:
-This program is a simplified multithreaded server database that allows multiple users to connect to the server via a port number and get, set, or delete keys and values from the database.
+This program is a multithreaded server database that allows multiple users to connect to the server via a port number and get, set, or delete keys and values from the database.
 
 In terms of testing, there are three major components to check: reading and writing data from and to the client, parsing and responding appropriately to data sent from a client, and being able to handle multiple clients using multiple threads and making sure multithreading is functional.
 
