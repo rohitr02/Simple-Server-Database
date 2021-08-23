@@ -1,11 +1,14 @@
-# CS214-Project3
-## Pauli Peralta (pp589) and Rohit Rao (rpr79)
+Pauli Peralta and Rohit Rao
 
 ### Brief Description:
-This program has a few major components that we needed to test in order to ensure that it was working correctly. The three major components are: reading and writing data from and to the client, parsing and responding appropriately to data sent from a client, and being able to handle multiple clients using multiple threads and making sure multithreading is functional.
+This program is a simplified multithreaded server database that allows multiple users to connect to the server via a port number and get, set, or delete keys and values from the database.
+
+In terms of testing, there are three major components to check: reading and writing data from and to the client, parsing and responding appropriately to data sent from a client, and being able to handle multiple clients using multiple threads and making sure multithreading is functional.
 
 ### Usage:
-To run this program, provide it with a port number between 5000 and 65,536 as an arguement. To communicate with the server, the user can send "GET" / "SET" / "DEL" instructions, followed by a positive integer representing the total byte size (**including spaces and newlines**) of the key and/or value to be stored/retrieved/deleted, and then the actual key and/or value to be stored/retrieved/deleted. Each of the arguements **must be** separated by a single newline character. Look at the following example for reference:
+1.) Navigate to the directory of the program in terminal and create the execuatable file by typing: ```make```
+
+2.) To run this program, provide it with a port number between 5000 and 65,536 as an arguement. To communicate with the server, the user can send "GET" / "SET" / "DEL" instructions, followed by a positive integer representing the total byte size (**including spaces and newlines**) of the key and/or value to be stored/retrieved/deleted, and then the actual key and/or value to be stored/retrieved/deleted. Each of the arguments **must be** separated by a single newline character. Look at the following example for reference:
 
 	SET			<== First Instruction must be "SET", "GET", or "DEL"
 	11			<== Second Instruction must be the total number of bytes of the key and/or value (Including spaces and newlines)
@@ -50,3 +53,6 @@ To ensure that the linked list data structure and the rest of the program behave
 
 ### Extreme Cases:
 We found that the server can handle messages upwards of 4096 characters long. We tested messages up to this size and ensured appropriate behavior. In the case of malloc or other rare failures, the program is designed to immediately exit with EXIT_FAILURE. Lastly, we tested this program with Address Sanitizer, Undefined Behavior Sanitizer, and Valgrind to make sure there are no memory leaks or undefined behavior.
+
+### Note: 
+The program is meant to run on the Rutgers iLabs servers and is not guaranteed to work on other systems.
